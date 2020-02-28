@@ -1,0 +1,27 @@
+,city,lat,lng,admin,population,cases
+1,Geneva,46.195602,6.148113,Genève,1240000,3
+2,Zürich,47.366667,8.55,Zürich,1108000,2
+3,Basel,47.558395,7.573271,Basel-Stadt,830000,1
+4,Bern,46.916667,7.466667,Bern,275329,0
+5,Lausanne,46.533333,6.666667,Vaud,265702,2
+6,Lucerne,47.083333,8.266667,Luzern,250000,0
+7,Lugano,46.009279,8.955576,Ticino,105388,1
+8,Sankt Fiden,47.43162,9.39845,Sankt Gallen,70572,0
+9,Chur,46.856753,9.526918,Graubünden,38293,2
+10,Schaffhausen,47.697316,8.634929,Schaffhausen,33863,0
+11,Fribourg,46.79572,7.154748,Fribourg,32827,0
+12,Neuchâtel,46.993089,6.93005,Neuchâtel,31270,0
+13,Tripon,46.270839,7.317785,Valais,28045,0
+14,Zug,47.172421,8.517445,Zug,23435,0
+15,Frauenfeld,47.55993,8.8998,Thurgau,21979,0
+17,Aarau,47.389616,8.052354,Aargau,15501,1
+18,Herisau,47.38271,9.27186,Appenzell Ausserrhoden,15438,0
+19,Solothurn,47.206649,7.516605,Solothurn,14853,0
+20,Schwyz,47.027858,8.656112,Schwyz,14177,0
+21,Liestal,47.482779,7.742975,Basel-Landschaft,12832,1
+22,Delémont,47.366429,7.329005,Jura,11315,0
+23,Sarnen,46.898509,8.250681,Obwalden,9410,1
+24,Altdorf,46.880422,8.644409,Uri,8678,0
+25,Stansstad,46.97731,8.34005,Nidwalden,7475,0
+26,Glarus,47.04057,9.068036,Glarus,5681,0
+27,Appenzell,47.328414,9.409647,Appenzell Innerrhoden,5649,0
