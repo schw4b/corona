@@ -2,15 +2,15 @@ library(shiny)
 library(leaflet)
 library(RColorBrewer)
 
-# create data sheet
-# dd = read.csv(file = '~/Data/corona/ch.csv')
-# dd = dd[!duplicated(dd$admin),c("city", "lat", "lng", "admin", "population")]
-# dd$cases = 0
-# write.csv(dd, file="~/Data/corona/data.csv")
-# dd$cases = sample(10:20, nrow(dd), replace = TRUE)
+# rsconnect::deployApp('Data/corona/')
 
-dd = read.csv(file = 'data.csv')
-myConst = 5000
+# Load data
+tab = read.csv('data.csv')
+update = readLines('lastupdate')
+# convert to case format
+dd = tab[rep(1:nrow(tab), tab$cases), ]
+
+# myConst = 100
 
 # adjust colors
 myColors = rownames(subset(brewer.pal.info, category %in% c("seq", "div")))
@@ -19,23 +19,41 @@ myColors  = c("Reds", "Oranges", "Blues", "Greens", "Purples")
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
   leafletOutput("map", width = "100%", height = "100%"),
-  absolutePanel(top = 10, right = 10,
-                sliderInput("range", "Cases", min(dd$cases), max(dd$cases),
-                            value = range(dd$cases), step = 1
-                ),
-                selectInput("colors", "Color Scheme",
-                            myColors
-                ),
-                
-                checkboxInput("legend", "Show legend", FALSE)
+  
+  absolutePanel(top = 10, right = 10, width = 220, draggable = TRUE, 
+                wellPanel(tags$b("COVID-19 cases in Switzerland (per canton) and world countries."),
+                          "Data are available",
+                          tags$a(href = "https://github.com/schw4b/corona", 
+                                 "here."),
+                          "Data sources from",
+                          tags$a(href = "https://www.swissinfo.ch/eng/covid-19_switzerland-confirms-second-coronavirus-case/45582788", 
+                                 "swissinfo.ch"),
+                          "and",
+                          tags$a(href = "https://github.com/CSSEGISandData/COVID-19", 
+                                 "JHU CSSE."), tags$br(),
+                          paste("Last update:", update), 
+                          style = "opacity: 0.70; font-size: 90%")
   )
+  
+  # absolutePanel(top = 10, right = 10,
+  #               sliderInput("range", "Cases", min(dd$cases), max(dd$cases),
+  #                           value = range(dd$cases), step = 1
+  #               ),
+  #               selectInput("colors", "Color Scheme",
+  #                           myColors
+  #               ),
+  # 
+  #               checkboxInput("legend", "Show legend", FALSE)
+  # )
 )
 
 server <- function(input, output, session) {
   
   # Reactive expression for the data subsetted to what the user selected
   filteredData <- reactive({
-    dd[dd$cases >= input$range[1] & dd$cases <= input$range[2],]
+    # dd[dd$cases >= input$range[1] & dd$cases <= input$range[2],]
+    dd
+
   })
   
   # This reactive expression represents the palette function,
@@ -49,7 +67,8 @@ server <- function(input, output, session) {
     # won't need to change dynamically (at least, not unless the
     # entire map is being torn down and recreated).
     leaflet(dd) %>% addTiles() %>%
-      fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
+      # fitBounds(~min(lng), ~min(lat), ~max(lng), ~max(lat))
+      fitBounds(6.15, 46.01, 9.53, 47.56)
   })
   
   # Incremental changes to the map (in this case, replacing the
@@ -57,12 +76,17 @@ server <- function(input, output, session) {
   # an observer. Each independent set of things that can change
   # should be managed in its own observer.
   observe({
-    pal <- colorpal()
+    #pal <- colorpal()
     
     leafletProxy("map", data = filteredData()) %>%
       clearShapes() %>%
-      addCircles(radius = ~cases*myConst, weight = 1, color = "#777777",
-                 fillColor = ~pal(cases), fillOpacity = 0.7, popup = ~paste(cases, admin)
+      # addCircles(radius = ~cases*myConst, weight = 1, color = "#777777",
+      #            fillColor = ~pal(cases), fillOpacity = 0.7, popup = ~paste(cases, admin)
+      # )
+      addMarkers(
+        clusterOptions = markerClusterOptions(spiderfyOnMaxZoom = FALSE, zoomToBoundsOnClick = FALSE,
+                                              removeOutsideVisibleBounds = TRUE, 
+                                              )
       )
   })
   
@@ -73,7 +97,7 @@ server <- function(input, output, session) {
     # Remove any existing legend, and only if the legend is
     # enabled, create a new one.
     proxy %>% clearControls()
-    if (input$legend) {
+    if (FALSE) { # (input$legend) {
       pal <- colorpal()
       proxy %>% addLegend(position = "bottomright",
                           pal = pal, values = ~cases
