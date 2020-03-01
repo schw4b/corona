@@ -85,8 +85,8 @@ server <- function(input, output, session) {
       # )
       addMarkers(
         clusterOptions = markerClusterOptions(spiderfyOnMaxZoom = FALSE, zoomToBoundsOnClick = FALSE,
-                                              removeOutsideVisibleBounds = TRUE, 
-                                              )
+                                              removeOutsideVisibleBounds = TRUE,
+                                              singleMarkerMode = TRUE)
       )
   })
   
