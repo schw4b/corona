@@ -1,11 +1,14 @@
 library(shiny)
 library(leaflet)
 library(RColorBrewer)
+library(ggplot2)
 
 # rsconnect::deployApp('Data/corona/')
 
 # Load data
 tab = read.csv('data.csv')
+d.time = read.csv('timeCourse.csv')
+d.time$date = as.Date(d.time$date)
 update = readLines('lastupdate')
 # convert to case format
 dd = tab[rep(1:nrow(tab), tab$cases), ]
@@ -32,22 +35,29 @@ ui <- bootstrapPage(
                           tags$a(href = "https://github.com/CSSEGISandData/COVID-19", 
                                  "JHU CSSE."), tags$br(),
                           paste("Last update:", update), 
-                          style = "opacity: 0.70; font-size: 90%")
-  )
+                          style = "opacity: 0.80; font-size: 70%")
+  ),
   
-  # absolutePanel(top = 10, right = 10,
-  #               sliderInput("range", "Cases", min(dd$cases), max(dd$cases),
-  #                           value = range(dd$cases), step = 1
-  #               ),
-  #               selectInput("colors", "Color Scheme",
-  #                           myColors
-  #               ),
-  # 
-  #               checkboxInput("legend", "Show legend", FALSE)
-  # )
+  absolutePanel(top = 120, right = 10, width = 220, draggable = TRUE, 
+         
+                  plotOutput("plot", height = "100px"),
+                          style = "opacity: 0.80; font-size: 70%")
+                
 )
 
 server <- function(input, output, session) {
+  
+  output$plot <- renderPlot({
+    input$newplot
+    # Add a little noise to the cars data
+    myBreaks = log(c(10,50,100,250,500,1000,3000))
+    ggplot(d.time, aes(x = date, y = log(cases), group=Country, col=Country)) +
+      geom_line() + geom_point() + 
+      scale_x_date(date_breaks = "4 day") +
+      scale_y_continuous(breaks=myBreaks,
+                         labels=exp(myBreaks)) + theme_minimal()+
+      ylab("no. of cases") + xlab("March") + theme(legend.title = element_blank(), axis.text.x = element_blank())
+    }, bg="#f0f0f0") 
   
   # Reactive expression for the data subsetted to what the user selected
   filteredData <- reactive({
