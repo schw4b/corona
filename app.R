@@ -26,8 +26,8 @@ myColors  = c("Reds", "Oranges", "Blues", "Greens", "Purples")
 
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
-  leafletOutput("map", width = "100%", height = "100%"),
-  
+  leafletOutput("map", width = "100%", height = "120%"),
+
   absolutePanel(top = 10, right = 10, width = 280, draggable = TRUE, 
                 tags$b("COVID-19 cases in Switzerland (per canton) and world countries."),
                           "Data are available",
@@ -42,13 +42,14 @@ ui <- bootstrapPage(
                           paste("Last update:", update), 
                           style = "opacity: 0.70; font-size: 70%; background-color: #f0f0f0"),
   
-  absolutePanel(top = 55, right = 10, width = 220, draggable = TRUE, 
-                  plotOutput("plot_cases", height = "100px"),
-                          style = "opacity: 0.70; font-size: 70%"),
-  
-  absolutePanel(top = 160, right = 10, width = 220, draggable = TRUE, 
-                plotOutput("plot_rate", height = "100px"),
-                style = "opacity: 0.70; font-size: 70%")
+  bootstrapPage(
+    absolutePanel(top = 55, right = 10, width = 280, draggable = TRUE, 
+                  HTML('<button data-toggle="collapse" data-target="#fig">Figures</button>'),
+                  tags$div(id = 'fig',  class="collapse",
+                           plotOutput("plot_cases", height = "120px"),
+                           plotOutput("plot_rate", height = "120px"),
+                           style = "opacity: 0.70; font-size: 70%")
+    ))
                 
 )
 
@@ -58,16 +59,20 @@ server <- function(input, output, session) {
     input$newplot
     
     # --- code for plot cases ---
-    myBreaks = log(c(10,20,100,200,500,1000,2000,4000))
+    myBreaks = log(c(10,20,50,100,200,500,1000,2000,5000,10000,20000))
     ggplot(d.time, aes(x = date, y = log(cases), group=Country, col=Country)) +
-      geom_line() + geom_point() + 
+      geom_line() + geom_point(size=0.3) +
+      scale_x_date(breaks=c(min(d.time$date), median(d.time$date)-0.5, 
+                            max(d.time$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("total cases") + xlab("day") +
-      theme(legend.title = element_blank(), axis.text.x = element_blank(),
+      theme(legend.title = element_blank(), 
+            legend.text = element_text(size = 8),
+            legend.key.size = unit(0.6, 'lines'),
             panel.grid.minor.x = element_blank(),
-            panel.grid.major.x = element_blank(),
-            panel.grid.minor.y =  element_blank(),
+            panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
+            panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
       )
     # --- end code for plot ---
@@ -79,16 +84,20 @@ server <- function(input, output, session) {
     
     # --- code for plot rate ---
     d.time_ = subset(d.time, subset = !is.na(rate))
-    myBreaks = log(c(5,20,50,100,200,400,800))
+    myBreaks = log(c(5,20,50,100,300,800,2000,5000))
     ggplot(d.time_, aes(x = date, y = log(rate), group=Country, col=Country)) +
-      geom_line() + geom_point() + 
+      geom_line() + geom_point(size=0.3) +
+      scale_x_date(breaks=c(min(d.time_$date), median(d.time_$date), 
+                            max(d.time_$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("cases per day") + xlab("day") +
-      theme(legend.title = element_blank(), axis.text.x = element_blank(),
+      theme(legend.title = element_blank(),
+            legend.text = element_text(size = 8),
+            legend.key.size = unit(0.6, 'lines'),
             panel.grid.minor.x = element_blank(),
-            panel.grid.major.x = element_blank(),
-            panel.grid.minor.y =  element_blank(),
+            panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
+            panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
       )
     # --- end code for plot ---
