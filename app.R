@@ -4,6 +4,7 @@ library(RColorBrewer)
 library(ggplot2)
 
 # rsconnect::deployApp('~/Data/corona/')
+# setwd('~/Data/corona/')
 
 # Load data
 tab = read.csv('data.csv')
@@ -34,8 +35,8 @@ ui <- bootstrapPage(
                           tags$a(href = "https://github.com/schw4b/corona", 
                                  "here."),
                           "Data sources from",
-                          tags$a(href = "https://www.swissinfo.ch/eng/covid-19_switzerland-confirms-second-coronavirus-case/45582788", 
-                                 "swissinfo.ch"),
+                          tags$a(href = "https://github.com/openZH/covid_19", 
+                                 "open.zh.ch"),
                           "and",
                           tags$a(href = "https://github.com/CSSEGISandData/COVID-19", 
                                  "JHU CSSE."),
@@ -44,11 +45,11 @@ ui <- bootstrapPage(
   
   bootstrapPage(
     absolutePanel(top = 55, right = 10, width = 280, draggable = TRUE, 
-                  HTML('<button data-toggle="collapse" data-target="#fig">Figures</button>'),
+                  HTML('<button data-toggle="collapse" data-target="#fig">Show/hide figures</button>'),
                   tags$div(id = 'fig',  class="collapse",
-                           plotOutput("plot_cases", height = "120px"),
-                           plotOutput("plot_rate", height = "120px"),
-                           style = "opacity: 0.70; font-size: 70%")
+                           plotOutput("plot_cases", height = "150px"),
+                           plotOutput("plot_rate", height = "150px"),
+                           style = "opacity: 0.90; font-size: 70%")
     ))
                 
 )
@@ -59,22 +60,25 @@ server <- function(input, output, session) {
     input$newplot
     
     # --- code for plot cases ---
-    myBreaks = log(c(10,20,50,100,200,500,1000,2000,5000,10000,20000))
+    myBreaks = log(c(10,20,50,100,200,500,1000,2000,5000,10000,20000,40000))
     ggplot(d.time, aes(x = date, y = log(cases), group=Country, col=Country)) +
-      geom_line() + geom_point(size=0.3) +
+      geom_point(size=1.5, shape=1) +
+      geom_line(size=0.8) +
+      # geom_smooth(method = "loess", se = FALSE, size=0.8) +
+      # geom_smooth(method = "glm", formula=y ~ poly(x, 5), se = FALSE, size=0.8) +
       scale_x_date(breaks=c(min(d.time$date), median(d.time$date)-0.5, 
                             max(d.time$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("total cases") + xlab("day") +
       theme(legend.title = element_blank(), 
-            legend.text = element_text(size = 8),
+            legend.text = element_text(size = 10),
             legend.key.size = unit(0.6, 'lines'),
             panel.grid.minor.x = element_blank(),
             panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
             panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
-      )
+      ) + scale_color_brewer(palette="Dark2")
     # --- end code for plot ---
     
     }, bg="#f0f0f0") 
@@ -86,20 +90,22 @@ server <- function(input, output, session) {
     d.time_ = subset(d.time, subset = !is.na(rate))
     myBreaks = log(c(5,20,50,100,300,800,2000,5000))
     ggplot(d.time_, aes(x = date, y = log(rate), group=Country, col=Country)) +
-      geom_line() + geom_point(size=0.3) +
+      geom_point(size=1.5, shape=1, position = position_jitter(width = 0.2, height = 0)) +
+      geom_smooth(method = "glm", formula=y ~ poly(x, 5), se = FALSE, size=0.8) +
+      #geom_smooth(method = "loess", se = FALSE, size=0.8) +
       scale_x_date(breaks=c(min(d.time_$date), median(d.time_$date), 
                             max(d.time_$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("cases per day") + xlab("day") +
       theme(legend.title = element_blank(),
-            legend.text = element_text(size = 8),
+            legend.text = element_text(size = 10),
             legend.key.size = unit(0.6, 'lines'),
             panel.grid.minor.x = element_blank(),
             panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
             panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
-      )
+      ) + scale_color_brewer(palette="Dark2")
     # --- end code for plot ---
     
   }, bg="#f0f0f0") 
