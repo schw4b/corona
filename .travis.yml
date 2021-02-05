@@ -5,5 +5,7 @@ language: r
 r: release
 cache:
     packages: true
+r_packages:
+    - rsconnect
 script:
     - R -f deploy.R
