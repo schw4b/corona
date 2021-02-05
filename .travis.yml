@@ -7,5 +7,9 @@ cache:
     packages: true
 r_packages:
     - rsconnect
+    - shiny
+    - leaflet
+    - RColorBrewer
+    - ggplot2
 script:
     - R -f deploy.R
