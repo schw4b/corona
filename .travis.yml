@@ -5,4 +5,5 @@ language: r
 r: release
 cache:
     packages: true
-
+script:
+    - R -f deploy.R
