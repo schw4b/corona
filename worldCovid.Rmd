@@ -1,0 +1,132 @@
+---
+title: "World Covid-19"
+output: html_notebook
+---
+
+# Libs and variables
+```{r}
+library(RCurl)
+library(testit)
+library(ggplot2)
+
+PATH     = '~/Data/worldCovid'
+FILE_JH  = 'JH.csv'
+```
+
+# Download world data from Johns Hopkins
+```{r}
+# world data
+url = 'https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
+download.file(url, destfile = FILE_JH, method="curl")
+```
+
+# Load world Covid-19 cases and safe to data file
+```{r}
+world = read.csv(file = file.path(PATH,FILE_JH), header = TRUE)
+tab = data.frame(country = world$Country.Region, cases = world[,ncol(world)], rate = world[,ncol(world)] - world[,ncol(world)-1],
+                     lat = world$Lat, lng = world$Long)
+
+tab$rate[tab$rate < 0] = 0
+write.csv(tab, file = file.path(PATH, 'data.csv'))
+write(format(Sys.time(), "%a %b %d %H:%M"), file=file.path(PATH, 'lastupdate'))
+```
+
+# Cases and rate for world countries across time
+```{r}
+# remove duplicates
+world = world[order(world[,ncol(world)], decreasing = TRUE),] # order along cases
+world = world[!duplicated(world$Country.Region),] # nice fix to get major counties without colonies, but does not work for canada and china
+
+# create real dates
+assert(grep("^X.*", names(world), value = TRUE)[1] == "X1.22.20")
+start = as.Date("2020/1/22") # first date in JH data file
+t = length(grep("^X.*", names(world)))  # how many days recorded
+end = start + t - 1
+dates = seq(start, end, "days")
+
+idx = grep("^X.*", names(world)) # columns with dates
+tab.time = NULL
+for (i in 1:nrow(world)) {
+  tmp = data.frame(country = rep(world$Country.Region[i], t),
+                   cases = as.numeric(world[i,idx]),
+                   rate = c(0, diff(as.numeric(world[i,idx]))), 
+                   ma = rollmean(c(0, diff(as.numeric(world[i,idx]))), 14, fill = NA),
+                   date = dates
+                   #lat = world[i,]$Lat, lng = world[i,]$Long
+                   )
+  tab.time = rbind(tab.time, tmp)
+}
+write.csv(tab.time, file=file.path(PATH, 'data_time.csv'))
+```
+
+# Prepare dataset for plots
+```{r}
+# select contries
+tab.plot = tab.time[grep("Switzerland|Germany|Austria|Italy|Japan|US|United Kingdom|Brazil", tab.time$country),]
+tab.plot = tab.plot[tab.plot$date >= as.Date("2020-03-01"),] # start 1 March
+# sort along cases
+tab.plot$country = as.factor(tab.plot$country)
+idx = order(tapply(tab.plot$cases, tab.plot$country, max), decreasing = TRUE)
+tab.plot$country = as.character(tab.plot$country)
+tab.plot$country = factor(tab.plot$country, levels = levels(as.factor(tab.plot$country))[idx])
+```
+
+# Plot: Cummulative no. of cases
+```{r}
+COLORS20 = c('#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+             '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+             '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', 
+             '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9')
+myBreaks = log(c(10,100,1000,10000,100000,10^6,10^7,5*10^7))
+myLabels = c("10", "100", "1000", "10k", "100k", "1mio", "10mio", "50mio")
+ggplot(tab.plot, aes(x = date, y = log(cases), group=country, col=country)) +
+  geom_line(size=0.8, alpha = 0.8) +
+  scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
+                        as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
+  scale_y_continuous(breaks=myBreaks,
+                     labels=myLabels) +
+  theme_minimal() + ylab("total cases") + xlab("day") +
+  theme(legend.title = element_blank(), 
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.6, 'lines'),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
+  ) + scale_colour_manual(values=COLORS20)
+```
+
+# Plot: Rate
+```{r}
+COLORS20 = c('#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+             '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+             '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', 
+             '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9')
+tab.plot_ = subset(tab.plot, subset = !is.na(rate) & rate > 0)
+myBreaks = log(c(10,20,50,100,200,500,1000, 2000,5000,10000,20000,50000,100000, 2*10^5))
+ggplot(tab.plot_, aes(x = date, y = log(rate), group=country, col=country)) +
+  geom_line(aes(y=log(ma))) +
+  # geom_point(size=0.5, shape=1, position = position_jitter(width = 0, height = 0), alpha = 0.5) +
+  scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
+                        as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
+  scale_y_continuous(breaks=myBreaks,
+                     labels=exp(myBreaks)) +
+  theme_minimal() + ylab("cases per day") + xlab("day") +
+  theme(legend.title = element_blank(),
+        legend.text = element_text(size = 10),
+        legend.key.size = unit(0.6, 'lines'),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
+  ) + scale_colour_manual(values=COLORS20)
+```
+
+# Show data
+```{r}
+tail(subset(tab.time, subset = country == "Switzerland"))
+```
+
+```{r}
+tab[order(tab$rate, decreasing = TRUE),]
+```

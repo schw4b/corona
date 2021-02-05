@@ -8,50 +8,48 @@ library(ggplot2)
 
 # Load data
 tab = read.csv('data.csv')
-
-d.time = read.csv('timeCourse.csv')
-d.time$date = as.Date(d.time$date)
-# reorder levels
-tmp = d.time[( nrow(d.time) - nlevels(d.time$Country) + 1):nrow(d.time),]
-d.time$Country = factor(d.time$Country, levels = tmp$Country[order(tmp$cases, decreasing = TRUE)])
+tab.time = read.csv('data_time.csv')
+tab.time$date = as.Date(tab.time$date)
 
 update = readLines('lastupdate')
 # convert to case format
-dd = tab[rep(1:nrow(tab), tab$cases), ]
+dd = tab[rep(1:nrow(tab), tab$rate), ]
 
-# myConst = 100
+# prepare plot data
+tab.plot = tab.time[grep("Switzerland|Germany|Austria|Italy|Japan|US|United Kingdom|Brazil", tab.time$country),]
+tab.plot = tab.plot[tab.plot$date >= as.Date("2020-03-01"),] # start 1 March
 
-# adjust colors
-myColors = rownames(subset(brewer.pal.info, category %in% c("seq", "div")))
-myColors  = c("Reds", "Oranges", "Blues", "Greens", "Purples")
+# order levels
+tmp = tab.plot[order(tab.plot$cases, decreasing = TRUE),]
+tmp = tmp[!duplicated(tmp$country),]
+tab.plot$country = factor(tab.plot$country, levels =  tmp$country)
 
 ui <- bootstrapPage(
   tags$style(type = "text/css", "html, body {width:100%;height:100%}"),
   leafletOutput("map", width = "100%", height = "120%"),
-
+  
   absolutePanel(top = 10, right = 10, width = 280, draggable = TRUE, 
-                tags$b("COVID-19 cases in Switzerland (per canton) and world countries."),
-                          "Data are available",
-                          tags$a(href = "https://github.com/schw4b/corona", 
-                                 "here."),
-                          "Data sources from",
-                          tags$a(href = "https://github.com/openZH/covid_19", 
-                                 "open.zh.ch"),
-                          "and",
-                          tags$a(href = "https://github.com/CSSEGISandData/COVID-19", 
-                                 "JHU CSSE."),
-                          paste("Last update:", update), 
-                          style = "opacity: 0.70; font-size: 70%; background-color: #f0f0f0"),
+                tags$b("Yesterdays newly reported COVID-19 cases in Switzerland and the world."),
+                "Data are available",
+                tags$a(href = "https://github.com/schw4b/corona", 
+                       "here."),
+                "Data sources from",
+                #tags$a(href = "https://github.com/openZH/covid_19", "open.zh.ch"),
+                #"and",
+                tags$a(href = "https://github.com/CSSEGISandData/COVID-19", 
+                       "JHU CSSE."),
+                paste("Last update:", update), 
+                style = "opacity: 0.70; font-size: 70%; background-color: #f0f0f0"),
   
   bootstrapPage(
     absolutePanel(top = 55, right = 10, width = 280, draggable = TRUE, 
                   HTML('<button data-toggle="collapse" data-target="#fig">Show/hide figures</button>'),
                   tags$div(id = 'fig',  class="collapse",
-                           plotOutput("plot_cases", height = "150px"),
-                           plotOutput("plot_rate", height = "150px"),
+                           plotOutput("plot_cases", height = "180px"),
+                           plotOutput("plot_rate", height = "180px"),
                            style = "opacity: 0.90; font-size: 70%")
     ))
-                
+  
 )
 
 server <- function(input, output, session) {
@@ -60,16 +58,18 @@ server <- function(input, output, session) {
     input$newplot
     
     # --- code for plot cases ---
-    myBreaks = log(c(10,20,50,100,200,500,1000,2000,5000,10000,20000,40000))
-    ggplot(d.time, aes(x = date, y = log(cases), group=Country, col=Country)) +
-      geom_point(size=1.5, shape=1) +
-      geom_line(size=0.8) +
-      # geom_smooth(method = "loess", se = FALSE, size=0.8) +
-      # geom_smooth(method = "glm", formula=y ~ poly(x, 5), se = FALSE, size=0.8) +
-      scale_x_date(breaks=c(min(d.time$date), median(d.time$date)-0.5, 
-                            max(d.time$date)), date_labels = "%d %b") +
+    COLORS20 = c('#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                 '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+                 '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', 
+                 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9')
+    myBreaks = log(c(10,100,1000,10000,100000,10^6,10^7,5*10^7))
+    myLabels = c("10", "100", "1000", "10k", "100k", "1mio", "10mio", "50mio")
+    ggplot(tab.plot, aes(x = date, y = log(cases), group=country, col=country)) +
+      geom_line(size=0.8, alpha = 0.8) +
+      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
+                            as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
-                         labels=exp(myBreaks)) +
+                         labels=myLabels) +
       theme_minimal() + ylab("total cases") + xlab("day") +
       theme(legend.title = element_blank(), 
             legend.text = element_text(size = 10),
@@ -78,23 +78,26 @@ server <- function(input, output, session) {
             panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
             panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
-      ) + scale_color_brewer(palette="Dark2")
+      ) + scale_colour_manual(values=COLORS20)
     # --- end code for plot ---
     
-    }, bg="#f0f0f0") 
+  }, bg="#f0f0f0") 
   
   output$plot_rate <- renderPlot({
     input$newplot
     
     # --- code for plot rate ---
-    d.time_ = subset(d.time, subset = !is.na(rate))
-    myBreaks = log(c(5,20,50,100,300,800,2000,5000))
-    ggplot(d.time_, aes(x = date, y = log(rate), group=Country, col=Country)) +
-      geom_point(size=1.5, shape=1, position = position_jitter(width = 0.2, height = 0)) +
-      geom_smooth(method = "glm", formula=y ~ poly(x, 5), se = FALSE, size=0.8) +
-      #geom_smooth(method = "loess", se = FALSE, size=0.8) +
-      scale_x_date(breaks=c(min(d.time_$date), median(d.time_$date), 
-                            max(d.time_$date)), date_labels = "%d %b") +
+    COLORS20 = c('#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
+                 '#911eb4', '#42d4f4', '#f032e6', '#bfef45', '#fabed4', 
+                 '#469990', '#dcbeff', '#9A6324', '#fffac8', '#800000', 
+                 '#aaffc3', '#808000', '#ffd8b1', '#000075', '#a9a9a9')
+    tab.plot_ = subset(tab.plot, subset = !is.na(rate) & rate > 0)
+    myBreaks = log(c(10,20,50,100,200,500,1000, 2000,5000,10000,20000,50000,100000, 2*10^5))
+    ggplot(tab.plot_, aes(x = date, y = log(rate), group=country, col=country)) +
+      geom_line(aes(y=log(ma))) +
+      # geom_point(size=0.5, shape=1, position = position_jitter(width = 0, height = 0), alpha = 0.5) +
+      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
+                            as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("cases per day") + xlab("day") +
@@ -105,7 +108,7 @@ server <- function(input, output, session) {
             panel.grid.major.x = element_line(colour = "gray80", linetype = "solid"),
             panel.grid.minor.y = element_blank(),
             panel.grid.major.y = element_line(colour = "gray80", linetype = "solid")
-      ) + scale_color_brewer(palette="Dark2")
+      ) + scale_colour_manual(values=COLORS20)
     # --- end code for plot ---
     
   }, bg="#f0f0f0") 
@@ -114,13 +117,13 @@ server <- function(input, output, session) {
   filteredData <- reactive({
     # dd[dd$cases >= input$range[1] & dd$cases <= input$range[2],]
     dd
-
+    
   })
   
   # This reactive expression represents the palette function,
   # which changes as the user makes selections in UI.
   colorpal <- reactive({
-    colorNumeric(input$colors, dd$cases)
+    colorNumeric(input$colors, dd$rate)
   })
   
   output$map <- renderLeaflet({
@@ -145,9 +148,12 @@ server <- function(input, output, session) {
       #            fillColor = ~pal(cases), fillOpacity = 0.7, popup = ~paste(cases, admin)
       # )
       addMarkers(
-        clusterOptions = markerClusterOptions(spiderfyOnMaxZoom = FALSE, zoomToBoundsOnClick = FALSE,
+        clusterOptions = markerClusterOptions(spiderfyOnMaxZoom = FALSE,
+                                              zoomToBoundsOnClick = FALSE,
                                               removeOutsideVisibleBounds = TRUE,
-                                              singleMarkerMode = TRUE)
+                                              singleMarkerMode = TRUE,
+                                              showCoverageOnHover = FALSE
+        )
       )
   })
   
@@ -161,7 +167,7 @@ server <- function(input, output, session) {
     if (FALSE) { # (input$legend) {
       pal <- colorpal()
       proxy %>% addLegend(position = "bottomright",
-                          pal = pal, values = ~cases
+                          pal = pal, values = ~rate
       ) 
     }
   })

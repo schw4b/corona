@@ -1,0 +1,8 @@
+dist: focal
+sudo: false
+latex: false
+language: r
+r: release
+cache:
+    packages: true
+
