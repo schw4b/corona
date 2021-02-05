@@ -8,6 +8,7 @@ output: html_notebook
 library(RCurl)
 library(testit)
 library(ggplot2)
+library(zoo)
 
 PATH     = '~/Data/worldCovid'
 FILE_JH  = 'JH.csv'

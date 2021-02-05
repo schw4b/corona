@@ -7,15 +7,9 @@ cache:
     packages: true
 r_packages:
     - rsconnect
-    - shiny
-    - leaflet
-    - RColorBrewer
+    - RCurl
+    - testit
     - ggplot2
-    - highr
-    - knitr
-    - rmarkdown
-    - stringi
-    - stringr
-    - tinytex
+    - zoo
 script:
     - R -f deploy.R
