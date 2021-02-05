@@ -11,5 +11,11 @@ r_packages:
     - leaflet
     - RColorBrewer
     - ggplot2
+    - highr
+    - knitr
+    - rmarkdown
+    - stringi
+    - stringr
+    - tinytex
 script:
     - R -f deploy.R
