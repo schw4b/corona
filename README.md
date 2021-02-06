@@ -1,9 +1,5 @@
-# COVID-19 cases in Switzerland (per canton) and world countries.
-Shiny app: https://simsc.shinyapps.io/corona/
-
-Counts are assembled from two sources 
-- https://github.com/openZH/covid_19
-- https://github.com/CSSEGISandData/COVID-19
+# COVID-19 cases in and world countries.
+Shiny app: https://schw4b.shinyapps.io/worldCorona/
 
 Useful technical ressources: 
 - https://rstudio.github.io/leaflet/shiny.html
