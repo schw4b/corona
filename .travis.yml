@@ -11,5 +11,14 @@ r_packages:
     - testit
     - ggplot2
     - zoo
+    - shiny
+    - leaflet
+    - RColorBrewer
+    - highr
+    - knitr
+    - rmarkdown
+    - stringi
+    - stringr
+    - tinytex
 script:
     - R -f deploy.R
