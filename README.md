@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/schw4b/worldCovid.svg?branch=master)](https://travis-ci.org/schw4b/worldCovid)
 
-Shiny app: https://schw4b.shinyapps.io/worldCorona/
+Shiny app: https://schw4b.shinyapps.io/worldCovid/
 
 Useful technical ressources: 
 - https://rstudio.github.io/leaflet/shiny.html
