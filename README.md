@@ -1,4 +1,4 @@
-# COVID-19 cases in and world countries.
+# COVID-19 cases in the world countries
 Shiny app: https://schw4b.shinyapps.io/worldCorona/
 
 Useful technical ressources: 
