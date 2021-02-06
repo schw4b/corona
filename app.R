@@ -31,7 +31,7 @@ ui <- bootstrapPage(
   absolutePanel(top = 10, right = 10, width = 280, draggable = TRUE, 
                 tags$b("Yesterdays newly reported COVID-19 cases in Switzerland and the world."),
                 "Data are available",
-                tags$a(href = "https://github.com/schw4b/corona", 
+                tags$a(href = "https://github.com/schw4b/worldCovid", 
                        "here."),
                 "Data sources from",
                 #tags$a(href = "https://github.com/openZH/covid_19", "open.zh.ch"),
@@ -66,8 +66,8 @@ server <- function(input, output, session) {
     myLabels = c("10", "100", "1000", "10k", "100k", "1mio", "10mio", "50mio")
     ggplot(tab.plot, aes(x = date, y = log(cases), group=country, col=country)) +
       geom_line(size=0.8, alpha = 0.8) +
-      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
-                            as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
+      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-07-01"), 
+                            as.Date("2020-11-01"), max(tab.plot$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=myLabels) +
       theme_minimal() + ylab("total cases") + xlab("day") +
@@ -94,10 +94,10 @@ server <- function(input, output, session) {
     tab.plot_ = subset(tab.plot, subset = !is.na(rate) & rate > 0)
     myBreaks = log(c(10,20,50,100,200,500,1000, 2000,5000,10000,20000,50000,100000, 2*10^5))
     ggplot(tab.plot_, aes(x = date, y = log(rate), group=country, col=country)) +
-      geom_line(aes(y=log(ma))) +
+      geom_line(aes(y=log(ma)), size=0.8, alpha = 0.8) +
       # geom_point(size=0.5, shape=1, position = position_jitter(width = 0, height = 0), alpha = 0.5) +
-      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-05-01"), as.Date("2020-07-01"), as.Date("2020-09-01"), 
-                            as.Date("2020-11-01"), as.Date("2021-01-01"), max(tab.plot$date)), date_labels = "%d %b") +
+      scale_x_date(breaks=c(min(tab.plot$date), as.Date("2020-07-01"), 
+                            as.Date("2020-11-01"), max(tab.plot$date)), date_labels = "%d %b") +
       scale_y_continuous(breaks=myBreaks,
                          labels=exp(myBreaks)) +
       theme_minimal() + ylab("cases per day") + xlab("day") +
